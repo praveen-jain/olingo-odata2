@@ -24,8 +24,10 @@ import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -471,7 +473,7 @@ public class JPAEntity {
       IllegalAccessException, IllegalArgumentException, InvocationTargetException, ODataJPARuntimeException {
     if (entityPropertyValue != null) {
       if (propertyName != null) {
-        method.invoke(entity, propertyName, entityPropertyValue);
+    	          method.invoke(entity, propertyName, entityPropertyValue);
         return;
       }
       Class<?> parameterType = method.getParameterTypes()[0];
@@ -511,8 +513,13 @@ public class JPAEntity {
       } else if (parameterType.equals(Timestamp.class)) {
         Timestamp ts = new Timestamp(((Calendar) entityPropertyValue).getTimeInMillis());
         method.invoke(entity, ts);
-      } else if (parameterType.equals(java.util.Date.class)) {
-        method.invoke(entity, ((Calendar) entityPropertyValue).getTime());
+      } else if (parameterType.equals(java.util.Date.class)) {				//fix for T5-1426
+    		if(((GregorianCalendar)entityPropertyValue).toZonedDateTime()
+              .toLocalDate().isEqual(LocalDate.of(1900, 1, 1))) {
+          method.invoke(entity, new Object[]{null});
+    		}else{
+          method.invoke(entity, ((Calendar) entityPropertyValue).getTime());
+        }
       } else if (parameterType.equals(java.sql.Date.class)) {
         long timeInMs = ((Calendar) entityPropertyValue).getTimeInMillis();
         method.invoke(entity, new java.sql.Date(timeInMs));
