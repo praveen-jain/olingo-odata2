@@ -278,7 +278,7 @@ public class ODataExpressionParser {
       case TOUPPER:
         return String.format("UPPER(%s)", first);
       case STARTSWITH:
-    	  return String.format("%s LIKE %s", second, first);
+    	  return String.format("%s LIKE %s", first, second);
       case ENDSWITH:
         return String.format("%s LIKE CONCAT('%%',%s) ESCAPE '\\'", first, second);
       default:
