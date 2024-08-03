@@ -401,6 +401,8 @@ public class JPAQueryBuilder {
   private static final Pattern VALUE_NORM_PATTERN = Pattern.compile("(?:^|\\s|\\()'(([^']*)')");
   private static final Pattern JOIN_ALIAS_PATTERN = Pattern.compile(".*\\sJOIN\\s(\\S*\\s\\S*).*");
 
+  private static final Pattern QUERY_PARAM_PATTERN = Pattern.compile("('[^' ]+')");
+
   private static String normalizeMembers(EntityManager em, String jpqlQuery) {  
     
     //check if clause values are string with x.y.z format
@@ -411,13 +413,44 @@ public class JPAQueryBuilder {
     query = removeExtraClause(jpqlQuery);
     // check if normalization is needed (if query contains "x.y.z" elements
     // starting with space or parenthesis)
+    
+
+
+  	Map<String, String> replacedBack = new HashMap<String,String>();
+  	   
+  	Matcher queryParamNeededMatcher = QUERY_PARAM_PATTERN.matcher(jpqlQuery);
+  	
+  	boolean qpNeeded = queryParamNeededMatcher.find();
+  	int cnt = 1;
+      while (qpNeeded) {
+      	cnt++;
+        String membershipToNormalize = queryParamNeededMatcher.group(1);
+        String alias = "_______"+cnt+"_______";
+  	  replacedBack.put(membershipToNormalize, alias);
+        jpqlQuery = jpqlQuery.replaceAll(membershipToNormalize, alias);
+        queryParamNeededMatcher = QUERY_PARAM_PATTERN.matcher(jpqlQuery);
+        qpNeeded = queryParamNeededMatcher.find();
+        if(cnt > 100) {
+      	  qpNeeded = false;
+      	  break;
+        }
+      }
+      
     Matcher normalizationNeededMatcher = NORMALIZATION_NEEDED_PATTERN.matcher(query);
+    boolean noMatch = false;
     if (!normalizationNeededMatcher.find()) {
-      return jpqlQuery;
+    	noMatch = true;
     }
 
     if (containsEmbeddedAttributes(em, jpqlQuery)) {
-      return jpqlQuery;
+    	noMatch = true;
+    }
+    
+    if(noMatch) {
+    	for(Entry<String, String> entry : replacedBack.entrySet()) {
+    		jpqlQuery = jpqlQuery.replaceAll(entry.getValue(), entry.getKey());
+        }
+    	return jpqlQuery;
     }
     
     String normalizedJpqlQuery = jpqlQuery;
@@ -434,6 +467,7 @@ public class JPAQueryBuilder {
     // normalize query
     boolean normalizationNeeded = true;
     while (normalizationNeeded) {
+    	cnt++;
       String membershipToNormalize = normalizationNeededMatcher.group(1);
 
       // get member info
@@ -468,6 +502,9 @@ public class JPAQueryBuilder {
       // check if further normalization is needed
       normalizationNeededMatcher = NORMALIZATION_NEEDED_PATTERN.matcher(query);
       normalizationNeeded = normalizationNeededMatcher.find();
+    }
+    for(Entry<String, String> entry : replacedBack.entrySet()) {
+    	normalizedJpqlQuery = normalizedJpqlQuery.replaceAll(entry.getValue(), entry.getKey());
     }
     
     // add distinct to avoid duplicates in result set
@@ -528,7 +565,7 @@ public class JPAQueryBuilder {
     final String queriedEntity = jpqlQuery.substring(pos, lastpos);
     for (EntityType<?> type : types) {
       if(queriedEntity.equals(type.getName())) {
-        Set<Attribute<?, ?>> attributes = (Set<Attribute<?, ?>>) type.getAttributes();
+        Set<Attribute<?, ?>> attributes = (Set) type.getAttributes();
         for (Attribute<?, ?> attribute : attributes) {
           if(jpqlQuery.contains(attribute.getName()) &&
             attribute.getPersistentAttributeType() == Attribute.PersistentAttributeType.EMBEDDED) {

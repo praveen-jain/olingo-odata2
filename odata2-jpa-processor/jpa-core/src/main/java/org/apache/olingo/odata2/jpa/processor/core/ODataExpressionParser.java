@@ -135,7 +135,9 @@ public class ODataExpressionParser {
       edmMapping = getEdmMapping(binaryExpression);
       final String right = parseToJPAWhereExpression(binaryExpression.getRightOperand(), tableAlias, 
           getIndexValue(index, positionalParameters), positionalParameters, edmMapping);
-
+      if(binaryExpression.getLeftOperand().getKind().equals(ExpressionKind.METHOD) && ((MethodExpression)binaryExpression.getLeftOperand()).getMethod().equals(MethodOperator.SUBSTRINGOF)) {
+  	  	return left;
+      }
       // Special handling for STARTSWITH and ENDSWITH method expression
       if (operator != null && (operator == MethodOperator.STARTSWITH || operator == MethodOperator.ENDSWITH)) {
         if (!binaryExpression.getOperator().equals(BinaryOperator.EQ) && 
@@ -262,22 +264,21 @@ public class ODataExpressionParser {
         third = third != null ? ", " + third : "";
         return String.format("SUBSTRING(%s, %s + 1 %s)", first, second, third);
       case SUBSTRINGOF:
+    	  first = first.replaceAll("'", "");
         if (methodFlag.get() != null && methodFlag.get() == 1) {
           methodFlag.set(null);
-          return String.format("(CASE WHEN (%s LIKE CONCAT('%%',CONCAT(%s,'%%')) ESCAPE '\\') "
-              + "THEN TRUE ELSE FALSE END)",
-              second, first);
+          return String.format("(%s LIKE '%%%s%%')",
+                  second, first);
         } else {
-          return String.format("(CASE WHEN (%s LIKE CONCAT('%%',CONCAT(%s,'%%')) ESCAPE '\\') "
-              + "THEN TRUE ELSE FALSE END) = true",
-              second, first);
+        	return String.format("(%s LIKE '%%%s%%')",
+                    second, first);
         }
       case TOLOWER:
         return String.format("LOWER(%s)", first);
       case TOUPPER:
         return String.format("UPPER(%s)", first);
       case STARTSWITH:
-        return String.format("%s LIKE CONCAT(%s,'%%') ESCAPE '\\'", first, second);
+    	  return String.format("%s LIKE %s", second, first);
       case ENDSWITH:
         return String.format("%s LIKE CONCAT('%%',%s) ESCAPE '\\'", first, second);
       default:

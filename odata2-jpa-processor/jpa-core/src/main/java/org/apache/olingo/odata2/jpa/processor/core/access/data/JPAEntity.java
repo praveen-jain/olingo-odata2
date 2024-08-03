@@ -24,9 +24,10 @@ import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -542,9 +543,13 @@ public class JPAEntity {
         Timestamp ts = entityPropertyValue != null ? 
             new Timestamp(((Calendar) entityPropertyValue).getTimeInMillis()) : null;
         method.invoke(entity, ts);
-      } else if (parameterType.equals(java.util.Date.class)) {
-        Date d = entityPropertyValue != null ? ((Calendar) entityPropertyValue).getTime(): null;
-        method.invoke(entity, d);
+      } else if (parameterType.equals(java.util.Date.class)) {				//fix for T5-1426
+  		if(((GregorianCalendar)entityPropertyValue).toZonedDateTime()
+                .toLocalDate().isEqual(LocalDate.of(1900, 1, 1))) {
+            method.invoke(entity, new Object[]{null});
+      		}else{
+            method.invoke(entity, ((Calendar) entityPropertyValue).getTime());
+          }
       } else if (parameterType.equals(java.sql.Date.class)) {
         java.sql.Date d = entityPropertyValue != null ? 
             new java.sql.Date(((Calendar) entityPropertyValue).getTimeInMillis()) : null;
