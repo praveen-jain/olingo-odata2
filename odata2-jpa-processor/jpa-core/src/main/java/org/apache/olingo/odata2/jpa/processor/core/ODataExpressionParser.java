@@ -208,8 +208,7 @@ public class ODataExpressionParser {
         return String.format("LOWER(%s)", first);
       case STARTSWITH:
         // second = second.substring(1, second.length() - 1);
-        second = updateValueIfWildcards(second);
-        return String.format("%s LIKE %s", second, first);
+        return String.format("%s LIKE %s", first, second);
       case ENDSWITH:
         // second = second.substring(1, second.length() - 1);
         second = updateValueIfWildcards(second);
