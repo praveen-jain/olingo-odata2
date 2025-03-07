@@ -18,6 +18,9 @@
  ******************************************************************************/
 package org.apache.olingo.odata2.jpa.processor.core.jpql;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.apache.olingo.odata2.jpa.processor.api.exception.ODataJPARuntimeException;
 import org.apache.olingo.odata2.jpa.processor.api.jpql.JPQLContextType;
 import org.apache.olingo.odata2.jpa.processor.api.jpql.JPQLContextView;
@@ -29,6 +32,8 @@ public class JPQLSelectStatementBuilder extends JPQLStatementBuilder {
 
   JPQLStatement jpqlStatement;
   private JPQLSelectContextView context;
+  
+  private static final Pattern ORDERBY_PATTERN = Pattern.compile(".*?ORDER BY ((.*?)\\.(.*?)\\.(.*?))\\s.*");
 
   public JPQLSelectStatementBuilder(final JPQLContextView context) {
     this.context = (JPQLSelectContextView) context;
@@ -45,7 +50,7 @@ public class JPQLSelectStatementBuilder extends JPQLStatementBuilder {
 
     StringBuilder jpqlQuery = new StringBuilder();
     String tableAlias = context.getJPAEntityAlias();
-    String fromClause = context.getJPAEntityName() + JPQLStatement.DELIMITER.SPACE + tableAlias;
+    StringBuilder fromClause = new StringBuilder(context.getJPAEntityName() + JPQLStatement.DELIMITER.SPACE + tableAlias);
 
     jpqlQuery.append(JPQLStatement.KEYWORD.SELECT).append(JPQLStatement.DELIMITER.SPACE);
     if (context.getType().equals(JPQLContextType.SELECT_COUNT)) { // $COUNT
@@ -58,25 +63,39 @@ public class JPQLSelectStatementBuilder extends JPQLStatementBuilder {
     }
 
     jpqlQuery.append(JPQLStatement.KEYWORD.FROM).append(JPQLStatement.DELIMITER.SPACE);
-    jpqlQuery.append(fromClause);
 
+    StringBuilder whereClause = new StringBuilder();
     if (context.getWhereExpression() != null) {
-      jpqlQuery.append(JPQLStatement.DELIMITER.SPACE);
-      jpqlQuery.append(JPQLStatement.KEYWORD.WHERE).append(JPQLStatement.DELIMITER.SPACE);
-      jpqlQuery.append(context.getWhereExpression());
+    	whereClause.append(JPQLStatement.DELIMITER.SPACE);
+    	whereClause.append(JPQLStatement.KEYWORD.WHERE).append(JPQLStatement.DELIMITER.SPACE);
+    	whereClause.append(context.getWhereExpression());
     }
 
+    StringBuilder orderByClause = new StringBuilder();
     if (context.getOrderByCollection() != null && context.getOrderByCollection().length() > 0) {
-
-      StringBuilder orderByBuilder = new StringBuilder();
-      orderByBuilder.append(context.getOrderByCollection());
-      jpqlQuery.append(JPQLStatement.DELIMITER.SPACE);
-      jpqlQuery.append(JPQLStatement.KEYWORD.ORDERBY).append(JPQLStatement.DELIMITER.SPACE);
-      jpqlQuery.append(orderByBuilder);
+    	orderByClause.append(JPQLStatement.DELIMITER.SPACE);
+    	orderByClause.append(JPQLStatement.KEYWORD.ORDERBY).append(JPQLStatement.DELIMITER.SPACE);
+    	orderByClause.append(context.getOrderByCollection());
+    	modifyWhereAndOrderBy(fromClause, orderByClause);
     }
+
+    jpqlQuery.append(fromClause);
+    jpqlQuery.append(whereClause);
+    jpqlQuery.append(orderByClause);
 
     return jpqlQuery.toString();
 
   }
-
+  
+  private void modifyWhereAndOrderBy(StringBuilder fromClauseSB, StringBuilder orderByClauseSB) {
+	  String orderByClause = orderByClauseSB.toString();
+	  Matcher matcher = ORDERBY_PATTERN.matcher(orderByClause);
+	  if(matcher.matches()) {
+		  orderByClause = orderByClause.replace(matcher.group(1), matcher.group(3)+"."+matcher.group(4));
+		  orderByClauseSB.delete(0, orderByClauseSB.length());
+		  orderByClauseSB.append(orderByClause);
+		  fromClauseSB.append(" LEFT JOIN "+ matcher.group(2)+"."+matcher.group(3)+" "+matcher.group(3));	  
+	  }
+  }
+  
 }

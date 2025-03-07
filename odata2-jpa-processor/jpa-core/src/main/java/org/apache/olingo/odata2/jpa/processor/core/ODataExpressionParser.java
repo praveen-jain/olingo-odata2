@@ -282,7 +282,7 @@ public class ODataExpressionParser {
           } else {
             orderByField = tableAlias + JPQLStatement.DELIMITER.PERIOD + getPropertyName(orderBy.getExpression());
           }
-          orderByDirection = (orderBy.getSortOrder() == SortOrder.asc) ? EMPTY :
+          orderByDirection = (orderBy.getSortOrder() == SortOrder.asc) ? JPQLStatement.DELIMITER.SPACE + "ASC NULLS LAST" :
               JPQLStatement.DELIMITER.SPACE + "DESC"; //$NON-NLS-1$
           jpqlOrderByExpression += orderByField + orderByDirection + " , ";
         } catch (EdmException e) {
