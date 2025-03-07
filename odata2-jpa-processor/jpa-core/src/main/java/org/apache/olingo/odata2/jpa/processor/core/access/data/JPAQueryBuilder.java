@@ -249,7 +249,7 @@ public class JPAQueryBuilder {
 	  
 
 
-	Map<String, String> replacedBack = new HashMap<>();
+	Map<String, String> replacedBack = new HashMap<String,String>();
 	   
 	Matcher queryParamNeededMatcher = QUERY_PARAM_PATTERN.matcher(jpqlQuery);
 	
