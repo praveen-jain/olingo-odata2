@@ -13,6 +13,7 @@
     <groupId>org.apache.olingo</groupId>
     <artifactId>olingo-odata2-jpa-processor</artifactId>
     <packaging>pom</packaging>
+    <version>2.0.9</version>
     <name>${project.artifactId}</name>
 
     <parent>
