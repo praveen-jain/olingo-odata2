@@ -237,8 +237,8 @@ public class JPAQueryBuilder {
     }
     return contextType;
   }
-
-  private static final Pattern NORMALIZATION_NEEDED_PATTERN = Pattern.compile(".*[\\s(](\\S+\\.\\S+\\.\\S+).*");
+  
+  public static final Pattern NORMALIZATION_NEEDED_PATTERN = Pattern.compile("(?<!LIKE\\s*['\"](.*?))([\\w]+\\.[\\w]+\\.[\\w]+)");
   private static final Pattern JOIN_ALIAS_PATTERN = Pattern.compile(".*\\sJOIN\\s(\\S*\\s\\S*).*");
   
   private static final Pattern QUERY_PARAM_PATTERN = Pattern.compile("('[^' ]+')");
@@ -301,7 +301,7 @@ public class JPAQueryBuilder {
     boolean normalizationNeeded = true;
     while (normalizationNeeded) {
     	cnt++;
-      String membershipToNormalize = normalizationNeededMatcher.group(1);
+      String membershipToNormalize = normalizationNeededMatcher.group(2);
 
       // get member info
       String memberInfo = membershipToNormalize.substring(0,
