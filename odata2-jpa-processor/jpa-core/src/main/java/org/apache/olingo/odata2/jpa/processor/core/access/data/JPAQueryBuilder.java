@@ -238,7 +238,7 @@ public class JPAQueryBuilder {
     return contextType;
   }
   
-  public static final Pattern NORMALIZATION_NEEDED_PATTERN = Pattern.compile("(?<!LIKE\\s*['\"](.*?))([\\w]+\\.[\\w]+\\.[\\w]+)");
+  public static final Pattern NORMALIZATION_NEEDED_PATTERN = Pattern.compile("(?<!LIKE\\s{1}['](.{0,10000}))([\\w]+\\.[\\w]+\\.[\\w]+)");
   private static final Pattern JOIN_ALIAS_PATTERN = Pattern.compile(".*\\sJOIN\\s(\\S*\\s\\S*).*");
   
   private static final Pattern QUERY_PARAM_PATTERN = Pattern.compile("('[^' ]+')");
@@ -249,7 +249,7 @@ public class JPAQueryBuilder {
 	  
 
 
-	Map<String, String> replacedBack = new HashMap<String,String>();
+	Map<String, String> replacedBack = new HashMap<>();
 	   
 	Matcher queryParamNeededMatcher = QUERY_PARAM_PATTERN.matcher(jpqlQuery);
 	
